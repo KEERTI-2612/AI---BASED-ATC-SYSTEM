@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Air Traffic Map</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
+    <style>
+        #map { height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <script>
+        var map = L.map('map').setView([20.5937, 78.9629], 5); // Centered on India
+
+        // OpenStreetMap Tile Layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        let aircraftMarkers = {}; // Store markers by ICAO24
+
+        // Fetch aircraft data and update the map
+        async function updateFlights() {
+            const response = await fetch('/data');
+            const data = await response.json();
+
+            // Remove markers that are no longer in the latest data
+            Object.keys(aircraftMarkers).forEach(icao24 => {
+                if (!data.aircraft.some(flight => flight.icao24 === icao24)) {
+                    map.removeLayer(aircraftMarkers[icao24]);
+                    delete aircraftMarkers[icao24];
+                }
+            });
+
+            data.aircraft.forEach(flight => {
+                if (!flight.latitude || !flight.longitude) return;
+
+                let marker = aircraftMarkers[flight.icao24];
+
+                if (!marker) {
+                    let planeIcon = L.divIcon({
+                        className: "airplane-icon",
+                        html: `✈️`,  // Just an airplane icon
+                        iconSize: [100, 100] // Increased size
+                    });
+
+                    marker = L.marker([flight.latitude, flight.longitude], {
+                        icon: planeIcon,
+                        rotationAngle: flight.heading,  // Rotate based on heading
+                        rotationOrigin: "center center"
+                    }).bindPopup(`
+                        <b>Flight ID: ${flight.icao24}</b><br>
+                        Callsign: ${flight.callsign || "Unknown"}<br>
+                        Airline: <img src="${flight.logo}" alt="logo" width="30"> ${flight.airline}<br>
+                        Altitude: ${flight.altitude.toFixed(2)} m<br>
+                        Speed: ${flight.velocity.toFixed(2)} m/s<br>
+                        Heading: ${flight.heading.toFixed(2)}°`);
+
+                    marker.addTo(map);
+                    aircraftMarkers[flight.icao24] = marker;
+                } else {
+                    marker.setLatLng([flight.latitude, flight.longitude]);
+                    marker.setRotationAngle(flight.heading);
+                }
+            });
+        }
+
+        // Update map every 10 seconds
+        setInterval(updateFlights, 10000);
+        updateFlights();
+
+        
+    </script>
+</body>
+</html>

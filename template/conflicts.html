@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conflict Detection</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+  min-height: 100%;
+  }
+
+body {
+  margin: 0;
+  font-family: 'Orbitron', sans-serif;
+  background: url('{{ url_for("static", filename="images/conflict-bg.jpg") }}') no-repeat center center fixed;
+  background-size: cover;
+  background-attachment: fixed;
+  color: white;
+  min-height: 100vh;
+  position: relative;
+}
+
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 1;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 30px;
+      color: #00ffcc;
+    }
+
+    .table-container {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      border-radius: 15px;
+      max-width: 95%;
+      margin: auto;
+      overflow-x: auto;
+      padding: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #ffffff;
+      text-align: center;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #444;
+    }
+
+    th {
+      background-color: #0f172a;
+      color: #00ffff;
+    }
+
+    td.high {
+      background-color: #ff0033;
+      font-weight: bold;
+    }
+
+    td.medium {
+      background-color: #ffcc00;
+      color: black;
+      font-weight: bold;
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 40px;
+      padding: 12px 25px;
+      background-color: #00bcd4;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #0097a7;
+    }
+
+    .approve-btn {
+      background-color: #4caf50;
+      border: none;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .approve-btn:hover {
+      background-color: #45a049;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+  <div class="content">
+    <h1>Aircraft Conflict Detection</h1>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Aircraft 1</th>
+            <th>Aircraft 2</th>
+            <th>Distance (km)</th>
+            <th>Altitude Diff (m)</th>
+            <th>Risk Level</th>
+            <th>Suggested Reroute</th>
+            <th>Approval</th>
+          </tr>
+        </thead>
+        <tbody id="conflict-table"></tbody>
+      </table>
+    </div>
+
+    <a href="/" class="btn">Back to Home</a>
+  </div>
+
+  <script>
+    function updateConflictData() {
+      fetch('/conflict-data')
+        .then(response => response.json())
+        .then(data => {
+          let table = document.getElementById("conflict-table");
+          table.innerHTML = "";
+
+          data.forEach((conflict) => {
+            let row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${conflict.aircraft_1}</td>
+              <td>${conflict.aircraft_2}</td>
+              <td>${conflict.distance_km}</td>
+              <td>${conflict.altitude_diff}</td>
+              <td class="${conflict.risk.toLowerCase()}">${conflict.risk}</td>
+              <td>${conflict.reroute}</td>
+              <td>
+                ${conflict.status === "Approved"
+                ?"✅ Approved"
+                :`<button class="approve-btn" onclick="approveConflict('${conflict.aircraft_1}','${conflict.aircraft_2}')">Approve</button>`
+                }
+              </td>
+            `;
+            table.appendChild(row);
+          });
+        });
+    }
+
+    function approveConflict(aircraft1, aircraft2) {
+    fetch('/approve-conflict', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ aircraft_1: aircraft1, aircraft_2: aircraft2 })
+    })
+    .then(response => response.json())
+    .then(() => updateConflictData())
+    .catch(err => console.error('Approval error:', err));
+    }
+
+
+    setInterval(updateConflictData, 5000);
+    updateConflictData();
+  </script>
+</body>
+</html>

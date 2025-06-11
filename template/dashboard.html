@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        
+        body {
+            
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: url('/background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: black;
+        }
+        .container {
+            width: auto;
+            margin: auto;
+            padding: 20px;
+            background: rgba(197, 193, 193, 0.7);
+            
+            border-radius: 10px;
+        }
+        .map-container {
+            width: 100%;
+            height: 500px;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            background: white;
+            color: black;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid black;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .stats-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin: 30px 0;
+      }
+
+      .stat-card {
+      background-color: #0f172a;
+      color: #00ffff;
+      font-family: 'Orbitron', sans-serif;
+      padding: 20px 30px;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      box-shadow: 0 0 10px #00ffff66;
+      min-width: 200px;
+    }
+
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <h1>DASHBOARD</h1>
+
+        <div class="stats-container">
+            <div class="stat-card">✈️ Total Flights<br><span id="flights">--</span></div>
+            <div class="stat-card">⚠️ Conflicts<br><span id="conflicts">--</span></div>
+            <div class="stat-card">✅ Approved<br><span id="approved">--</span></div>
+            <div class="stat-card">🔥 High Risk<br><span id="high">--</span></div>
+            <div class="stat-card">⚠️ Medium Risk<br><span id="medium">--</span></div>
+        </div>
+       
+
+        <h1>Live Air Traffic</h1>
+        <div class="map-container">
+            <iframe src="/live-map" width="100%" height="500px" frameborder="0"></iframe>
+        </div>
+        
+        <h2>Conflict Detection Table</h2>
+        <table>
+            <div class="map-container">
+                <iframe src="/conflicts" width="100%" height="500px" frameborder="0"></iframe>
+            </div>
+        </table>
+        
+        <a href="/" class="btn">Back to Home</a>
+    </div>
+
+
+    <script>
+        function loadstats(){
+            then(res => res.json())
+            .then(data => {
+                document.getElementById("flights").textContent = data.total_flights;
+                document.getElementById("conflicts").textContent = data.total_conflicts;
+                document.getElementById("approved").textContent = data.approved_conflicts;
+                document.getElementById("high").textContent = data.high_risk;
+                document.getElementById("medium").textContent = data.medium_risk;
+            })
+            .catch(err => console.error("Failed to load stats:", err));
+        }
+
+        loadstats();
+        setInterval(loadStats, 10000); // Refresh every 10 seconds
+
+        
+    </script>
+
+
+</body>
+</html>
